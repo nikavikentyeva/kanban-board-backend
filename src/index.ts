@@ -6,7 +6,11 @@ import columnsRouter from './routes/columns';
 import tasksRouter from './routes/tasks';
 
 const app = express();
-app.use(cors());
+
+const PORT = process.env.PORT || 3001;
+const CLIENT_URL = process.env.CLIENT_URL || '*';
+
+app.use(cors({ origin: CLIENT_URL }));
 app.use(express.json());
 
 app.get('/api/health', (_req, res) => {
@@ -22,8 +26,8 @@ app.use('/api/tasks', tasksRouter);
 async function main() {
   await initDatabase();
 
-  app.listen(3001, () => {
-    console.log('Server running on http://localhost:3001');
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
   });
 }
 
