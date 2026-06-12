@@ -69,14 +69,20 @@ router.get('/:boardId/search', async (req, res) => {
     return;
   }
 
-  const searchTerm = `%${q.trim().toLowerCase()}%`;
-  const tasks = await all<TaskRow>(
+  const searchTerm = q.trim().toLowerCase();
+  const allTasks = await all<TaskRow>(
     `SELECT tasks.* FROM tasks
      JOIN columns ON tasks.columnId = columns.id
-     WHERE columns.boardId = ? AND (LOWER(tasks.title) LIKE ? OR LOWER(COALESCE(tasks.description, '')) LIKE ?)
+     WHERE columns.boardId = ?
      ORDER BY tasks.position ASC`,
-    [boardId, searchTerm, searchTerm]
+    [boardId]
   );
+
+  const tasks = allTasks.filter((task) => {
+    const title = (task.title || '').toLowerCase();
+    const description = (task.description || '').toLowerCase();
+    return title.includes(searchTerm) || description.includes(searchTerm);
+  });
 
   res.json(tasks);
 });
