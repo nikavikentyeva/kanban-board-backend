@@ -55,6 +55,24 @@ router.post('/', async (req, res) => {
   res.status(201).json(column);
 });
 
+// GET /api/boards/:boardId/columns — список колонок доски
+router.get('/', async (req, res) => {
+  const { boardId } = req.params as { boardId: string };
+
+  const board = await get<BoardRow>('SELECT * FROM boards WHERE id = ?', [boardId]);
+  if (!board) {
+    res.status(404).json({ error: 'Board not found' });
+    return;
+  }
+
+  const columns = await all<ColumnRow>(
+    'SELECT * FROM columns WHERE boardId = ? ORDER BY position ASC',
+    [boardId]
+  );
+
+  res.json(columns);
+});
+
 // PATCH /api/columns/:id — переименовать колонку
 router.patch('/:id', async (req, res) => {
   const { id } = req.params;

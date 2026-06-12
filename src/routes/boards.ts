@@ -53,6 +53,34 @@ router.post('/', async (req, res) => {
   res.status(201).json(board);
 });
 
+// GET /api/boards/:boardId/search?q=term
+router.get('/:boardId/search', async (req, res) => {
+  const { boardId } = req.params;
+  const { q } = req.query;
+
+  const board = await get<BoardRow>('SELECT * FROM boards WHERE id = ?', [boardId]);
+  if (!board) {
+    res.status(404).json({ error: 'Board not found' });
+    return;
+  }
+
+  if (!q || typeof q !== 'string' || q.trim().length === 0) {
+    res.status(400).json({ error: 'Query parameter q is required' });
+    return;
+  }
+
+  const searchTerm = `%${q.trim().toLowerCase()}%`;
+  const tasks = await all<TaskRow>(
+    `SELECT tasks.* FROM tasks
+     JOIN columns ON tasks.columnId = columns.id
+     WHERE columns.boardId = ? AND (LOWER(tasks.title) LIKE ? OR LOWER(COALESCE(tasks.description, '')) LIKE ?)
+     ORDER BY tasks.position ASC`,
+    [boardId, searchTerm, searchTerm]
+  );
+
+  res.json(tasks);
+});
+
 // GET /api/boards/:id
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
